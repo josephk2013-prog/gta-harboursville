@@ -27,3 +27,34 @@ Recommended next step: define the playable boundary (for example, Sydney CBD and
 - `src/textures.js` generates original procedural asphalt, concrete, façade, and grass textures at runtime.
 - `src/main.js` applies those textures to the prototype city.
 - The current game still uses Three.js and its WebGL renderer. It is not running the Grand-V RAGE runtime or WebGPU renderer.
+
+
+## PlayGTA5 runtime and Sydney integration
+
+The owner describes `hammadshakeelai/gta5-web` as an open-source browser edition. Its repository contains the launcher, controller-to-keyboard bridge, asset-streaming helpers and support pages. The README describes the actual game as a compiled WebAssembly snapshot in a separate approximately 21.2 GB release download, not source files in the Git repository.
+
+The controller helper maps a standard gamepad to the engine's shared keyboard/mouse input. It does not expose vehicle physics, vehicle spawning, entity state or a modding API. `ENGINE-LIMITATIONS.md` explicitly says there is no supported interface for reading/writing player entities, vehicles, ownership or mission state.
+
+**Integration decision:** Harboursville now has a direct launch link to the PlayGTA5 runtime in a separate top-level tab. Do not iframe it: its diagnostics say embedded app browsers are unsupported, and its engine requires cross-origin isolation, SharedArrayBuffer, WebGPU and Memory64. This is a launch integration, not a claim that the original Los Santos world has been converted to Sydney.
+
+## Sydney map data pipeline
+
+The previous prototype generated random city blocks. The new map loader reads real WGS84 road centre-lines and building footprints from OpenStreetMap and projects them to metres around Circular Quay. Building heights use OSM `height` / `building:levels` tags when present, with a fallback estimate.
+
+Generate the starter CBD dataset:
+
+```bash
+python tools/fetch_sydney_osm.py
+```
+
+Then serve the repository over HTTP (not `file://`). The starter extract covers The Rocks, Sydney CBD, Barangaroo, Darling Harbour, Haymarket and the edge of Surry Hills. It is a geographically accurate starter district, **not yet all of Greater Sydney**. Expand the import in regional tiles rather than requesting the entire metro area in one Overpass query.
+
+OpenStreetMap attribution: © OpenStreetMap contributors. Data is available under the Open Database License (ODbL). Preserve attribution and review ODbL obligations when publishing a derived database.
+
+## Route to full-scale Sydney
+
+1. Expand OSM extraction to staged tiles covering the metropolitan footprint.
+2. Add terrain/elevation, coastline, parks, rail corridors, bridges, tunnels and ferry terminals.
+3. Replace placeholder building materials with original PBR facade/roof assets; add road markings, traffic signals, street furniture and vegetation.
+4. Add a vehicle system with suspension, tyre grip, drivetrain, damage and traffic AI. The upstream controller bridge is reusable as a control-mapping reference, but its vehicle simulation is not exposed for reuse.
+5. A true PlayGTA5-to-Sydney conversion needs a documented engine mod/map interface or buildable engine source. The current compiled snapshot does not provide that interface.
