@@ -1,4 +1,7 @@
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { createHarboursvilleTextures } from './textures.js';
+
+const textures = createHarboursvilleTextures();
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9bb8c4);
@@ -23,23 +26,24 @@ sun.shadow.camera.left = -180; sun.shadow.camera.right = 180;
 sun.shadow.camera.top = 180; sun.shadow.camera.bottom = -180;
 scene.add(sun);
 
-const mat = (color, roughness=0.85) => new THREE.MeshStandardMaterial({color, roughness});
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(900,900), mat(0x788b72));
+const mat = (color, roughness=0.85, map=null) => new THREE.MeshStandardMaterial({color, roughness, map});
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(900,900), mat(0xffffff,0.95,textures.grass));
 ground.rotation.x = -Math.PI/2; ground.position.y = -0.12; ground.receiveShadow = true; scene.add(ground);
 
 const water = new THREE.Mesh(new THREE.PlaneGeometry(900,170), new THREE.MeshStandardMaterial({color:0x367f9b, roughness:0.28, metalness:0.12}));
 water.rotation.x=-Math.PI/2; water.position.set(0,-0.08,-300); scene.add(water);
 
-const roadMat=mat(0x30363a), lineMat=mat(0xe5d9a5), pavementMat=mat(0xb7b4a8);
+const roadMat=mat(0xffffff,0.96,textures.asphalt), lineMat=mat(0xe5d9a5), pavementMat=mat(0xffffff,0.92,textures.concrete);
 function box(w,h,d,material,x,y,z,shadow=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=shadow;m.receiveShadow=true;scene.add(m);return m;}
+function road(w,d,x,z){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),roadMat);m.rotation.x=-Math.PI/2;m.position.set(x,0.045,z);m.receiveShadow=true;scene.add(m);return m;}
 
 // A compact fictionalised harbour city: broad avenues, blocks, towers and a waterfront.
 for(let x=-240;x<=240;x+=80){
-  box(13,0.08,520,roadMat,x,0,-30,false);
+  road(13,520,x,-30);
   for(let z=-270;z<220;z+=18) box(0.22,0.025,7,lineMat,x,0.06,z,false);
 }
 for(let z=-240;z<=200;z+=80){
-  box(520,0.08,13,roadMat,0,0,z,false);
+  road(520,13,0,z);
   for(let x=-250;x<250;x+=18) box(7,0.025,0.22,lineMat,x,0.06,z,false);
 }
 for(let x=-240;x<=240;x+=80) for(let z=-240;z<=160;z+=80){
@@ -49,7 +53,7 @@ for(let x=-240;x<=240;x+=80) for(let z=-240;z<=160;z+=80){
     if(Math.abs(bx)<28 && Math.abs(bz)<28) continue;
     const h=12+Math.random()*55;
     const palette=[0x9b9a91,0xb9b5a8,0x777f83,0xc2b9a6,0x697b80,0xd0c9b8];
-    const building=box(8+Math.random()*3,h,8+Math.random()*3,mat(palette[Math.floor(Math.random()*palette.length)]),bx,h/2,bz);
+    const building=box(8+Math.random()*3,h,8+Math.random()*3,mat(palette[Math.floor(Math.random()*palette.length)],0.78,textures.facade),bx,h/2,bz);
     if(Math.random()>.55){
       const roof=box(2,h*.05,2,mat(0x555b5c),bx,h+1,bz,false);
     }
