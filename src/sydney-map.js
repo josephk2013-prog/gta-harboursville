@@ -60,47 +60,58 @@ function addBuilding(scene, ring, tags, palette) {
   scene.add(building);
 }
 
-// Bundled starter map: fixed Sydney CBD street corridors and building blocks.
-// Coordinates are WGS84; no map service or network request is needed at runtime.
-const SYDNEY_ROADS = [
-  ["George Street", [[151.2061,-33.8730],[151.2064,-33.8690],[151.2067,-33.8650],[151.2070,-33.8610],[151.2073,-33.8585]], "primary"],
-  ["Pitt Street", [[151.2090,-33.8730],[151.2093,-33.8690],[151.2096,-33.8650],[151.2099,-33.8610],[151.2102,-33.8585]], "primary"],
-  ["Castlereagh Street", [[151.2080,-33.8730],[151.2083,-33.8690],[151.2086,-33.8650],[151.2089,-33.8610],[151.2092,-33.8585]], "secondary"],
-  ["Elizabeth Street", [[151.2100,-33.8730],[151.2103,-33.8690],[151.2106,-33.8650],[151.2109,-33.8610],[151.2112,-33.8585]], "secondary"],
-  ["Macquarie Street", [[151.2125,-33.8730],[151.2128,-33.8690],[151.2131,-33.8650],[151.2134,-33.8610],[151.2137,-33.8585]], "secondary"],
-  ["York Street", [[151.2040,-33.8700],[151.2043,-33.8660],[151.2046,-33.8620]], "secondary"],
-  ["Clarence Street", [[151.2030,-33.8700],[151.2033,-33.8660],[151.2036,-33.8620]], "secondary"],
-  ["Kent Street", [[151.2020,-33.8700],[151.2023,-33.8660],[151.2026,-33.8620]], "secondary"],
-  ["Bridge Street", [[151.2020,-33.8620],[151.2050,-33.8620],[151.2080,-33.8620],[151.2110,-33.8620],[151.2140,-33.8620]], "secondary"],
-  ["Hunter Street", [[151.2020,-33.8660],[151.2050,-33.8660],[151.2080,-33.8660],[151.2110,-33.8660],[151.2140,-33.8660]], "secondary"],
-  ["King Street", [[151.2020,-33.8680],[151.2050,-33.8680],[151.2080,-33.8680],[151.2110,-33.8680],[151.2140,-33.8680]], "secondary"],
-  ["Market Street", [[151.2020,-33.8700],[151.2050,-33.8700],[151.2080,-33.8700],[151.2110,-33.8700],[151.2140,-33.8700]], "secondary"],
-  ["Park Street", [[151.2020,-33.8720],[151.2050,-33.8720],[151.2080,-33.8720],[151.2110,-33.8720],[151.2140,-33.8720]], "secondary"],
-  ["Liverpool Street", [[151.2020,-33.8740],[151.2050,-33.8740],[151.2080,-33.8740],[151.2110,-33.8740],[151.2140,-33.8740]], "secondary"],
-  ["Bathurst Street", [[151.2020,-33.8760],[151.2050,-33.8760],[151.2080,-33.8760],[151.2110,-33.8760],[151.2140,-33.8760]], "secondary"],
-  ["Goulburn Street", [[151.2020,-33.8780],[151.2050,-33.8780],[151.2080,-33.8780],[151.2110,-33.8780],[151.2140,-33.8780]], "secondary"],
-  ["Campbell Street", [[151.2020,-33.8800],[151.2050,-33.8800],[151.2080,-33.8800],[151.2110,-33.8800],[151.2140,-33.8800]], "secondary"]
+// Hard-coded Greater Sydney region. The procedural street fabric and named corridors
+// are bundled in source: no runtime map requests. This is a playable regional layout,
+// not a survey-accurate street/building dataset.
+const REGION = { west: 150.98, east: 151.36, south: -34.02, north: -33.70 };
+const CORRIDORS = [
+  ["M1 Pacific Motorway", [[151.21,-33.86],[151.225,-33.82],[151.245,-33.78],[151.27,-33.74]], "motorway"],
+  ["M2 Hills Motorway", [[151.10,-33.77],[151.16,-33.78],[151.22,-33.79],[151.29,-33.79]], "motorway"],
+  ["M4 Western Motorway", [[150.99,-33.87],[151.06,-33.87],[151.13,-33.87],[151.20,-33.87]], "motorway"],
+  ["M5 South Western Motorway", [[151.20,-33.92],[151.14,-33.94],[151.08,-33.96],[151.02,-33.97]], "motorway"],
+  ["M8", [[151.20,-33.91],[151.16,-33.94],[151.12,-33.97]], "motorway"],
+  ["Eastern Distributor", [[151.21,-33.87],[151.215,-33.90],[151.22,-33.94]], "trunk"],
+  ["Parramatta Road", [[151.20,-33.88],[151.15,-33.88],[151.10,-33.88],[151.05,-33.88]], "trunk"],
+  ["Victoria Road", [[151.20,-33.86],[151.16,-33.85],[151.12,-33.84],[151.08,-33.83]], "trunk"],
+  ["Anzac Parade", [[151.22,-33.89],[151.22,-33.93],[151.22,-33.97]], "trunk"],
+  ["Pacific Highway", [[151.21,-33.86],[151.22,-33.82],[151.23,-33.78],[151.24,-33.73]], "trunk"],
+  ["Princes Highway", [[151.20,-33.91],[151.16,-33.94],[151.12,-33.98]], "trunk"],
+  ["Canterbury Road", [[151.20,-33.91],[151.15,-33.91],[151.10,-33.91],[151.05,-33.92]], "primary"],
+  ["Forest Road", [[151.14,-33.95],[151.18,-33.94],[151.22,-33.93],[151.27,-33.92]], "primary"],
+  ["Lane Cove Road", [[151.16,-33.80],[151.18,-33.82],[151.20,-33.85],[151.22,-33.88]], "primary"]
 ];
 
 function bundledSydneyFeatures() {
-  const features = SYDNEY_ROADS.map(([name, coordinates, highway]) => ({
+  const features = CORRIDORS.map(([name, coordinates, highway]) => ({
     type: "Feature", properties: { name, highway },
     geometry: { type: "LineString", coordinates }
   }));
-  // Fixed CBD block footprints between the bundled street corridors.
-  const xs = [151.2028,151.2040,151.2055,151.2072,151.2084,151.2100,151.2116,151.2130];
-  const ys = [-33.8600,-33.8630,-33.8670,-33.8690,-33.8710,-33.8730,-33.8750,-33.8770,-33.8790];
-  let index = 0;
-  for (let row = 0; row < ys.length - 1; row++) {
-    for (let col = 0; col < xs.length - 1; col++) {
-      const west = xs[col], east = xs[col + 1], north = ys[row], south = ys[row + 1];
-      const insetX = 0.00012, insetY = 0.00012;
-      const ring = [[west+insetX,north-insetY],[east-insetX,north-insetY],
-        [east-insetX,south+insetY],[west+insetX,south+insetY],[west+insetX,north-insetY]];
-      const levels = 4 + ((row * 7 + col * 3) % 28);
+  // Broad suburban street mesh across the Greater Sydney play area.
+  const lonStep = 0.012, latStep = 0.010;
+  let row = 0;
+  for (let lat = REGION.south; lat <= REGION.north; lat += latStep, row++) {
+    if (row % 3 !== 1) features.push({ type: "Feature",
+      properties: { highway: row % 6 === 0 ? "tertiary" : "residential" },
+      geometry: { type: "LineString", coordinates: [[REGION.west,lat],[REGION.east,lat + 0.0015*Math.sin(row)]] } });
+  }
+  let col = 0;
+  for (let lon = REGION.west; lon <= REGION.east; lon += lonStep, col++) {
+    if (col % 3 !== 1) features.push({ type: "Feature",
+      properties: { highway: col % 6 === 0 ? "tertiary" : "residential" },
+      geometry: { type: "LineString", coordinates: [[lon,REGION.south],[lon + 0.001*Math.sin(col),REGION.north]] } });
+  }
+  // Block footprints spread through the region, with denser development around the CBD.
+  for (let lat = REGION.south + 0.004, r = 0; lat < REGION.north; lat += 0.010, r++) {
+    for (let lon = REGION.west + 0.004, col = 0; lon < REGION.east; lon += 0.012, col++) {
+      const cbd = Math.abs(lon - 151.209) < 0.025 && Math.abs(lat + 33.868) < 0.025;
+      const skip = ((r * 17 + col * 13) % 7 === 0) || (Math.sin(r*2.1+col*1.7) > 0.92);
+      if (skip && !cbd) continue;
+      const w = (cbd ? 0.0024 : 0.0042) * (0.75 + ((r+col)%4)*0.08);
+      const h = (cbd ? 0.0018 : 0.0026);
+      const ring = [[lon,lat],[lon+w,lat],[lon+w,lat-h],[lon,lat-h],[lon,lat]];
+      const levels = cbd ? 8 + ((r*7+col*3)%42) : 1 + ((r*5+col*3)%5);
       features.push({ type: "Feature", properties: { building: "yes", "building:levels": String(levels) },
         geometry: { type: "Polygon", coordinates: [ring] } });
-      index++;
     }
   }
   return { type: "FeatureCollection", features };
@@ -122,5 +133,5 @@ export async function loadSydneyMap(scene, materials) {
       buildings++;
     }
   }
-  return { roads, buildings, attribution: 'Bundled Sydney CBD starter layout' };
+  return { roads, buildings, attribution: 'Bundled Greater Sydney procedural map' };
 }
