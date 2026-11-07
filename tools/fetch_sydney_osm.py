@@ -13,8 +13,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "sydney-cbd.geojson"
 # Circular Quay-centred starter area: The Rocks, CBD, Barangaroo, Darling Harbour,
-# Haymarket and Surry Hills edge. Expand this bbox in staged regional extracts.
-BBOX = "-33.89,151.18,-33.84,151.225"
+# Haymarket and Surry Hills edge; stop at the Circular Quay harbour shoreline. Expand this bbox in staged regional extracts.
+BBOX = "-33.90,151.18,-33.858,151.225"
 QUERY = f"""[out:json][timeout:180];
 (
   way["highway"]({BBOX});
