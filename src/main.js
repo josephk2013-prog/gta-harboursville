@@ -102,5 +102,9 @@ function animate(){
 }
 animate();
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-document.querySelector('#loading').classList.add('hidden');
-setTimeout(()=>document.querySelector('#loading')?.remove(),700);
+if (sydneyMap) {
+  document.querySelector('#loading').classList.add('hidden');
+  setTimeout(()=>document.querySelector('#loading')?.remove(),700);
+} else {
+  document.querySelector('#loading').textContent = 'SYDNEY MAP NOT BUILT · RUN python tools/fetch_sydney_osm.py';
+}
