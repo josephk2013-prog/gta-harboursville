@@ -46,7 +46,7 @@ try {
   document.querySelector('.location').textContent = 'SYDNEY CBD · CIRCULAR QUAY';
 } catch (error) {
   console.warn(error);
-  document.querySelector('#loading').textContent = 'RUN: python tools/fetch_sydney_osm.py';
+  document.querySelector('#loading').textContent = 'Sydney map service unavailable · refresh to retry';
   // Keep the driving prototype usable until the real OSM extract is generated.
   for (let x=-240;x<=240;x+=80) road(13,520,x,-30);
   for (let z=-240;z<=200;z+=80) road(520,13,0,z);
@@ -106,5 +106,5 @@ if (sydneyMap) {
   document.querySelector('#loading').classList.add('hidden');
   setTimeout(()=>document.querySelector('#loading')?.remove(),700);
 } else {
-  document.querySelector('#loading').textContent = 'SYDNEY MAP NOT BUILT · RUN python tools/fetch_sydney_osm.py';
+  document.querySelector('#loading').textContent = 'SYDNEY MAP SERVICE UNAVAILABLE · REFRESH TO RETRY';
 }
