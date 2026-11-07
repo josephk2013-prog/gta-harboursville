@@ -60,10 +60,42 @@ function addBuilding(scene, ring, tags, palette) {
   scene.add(building);
 }
 
+async function fetchSydneyFeatures() {
+  const bbox = '-33.90,151.18,-33.858,151.225';
+  const query = `[out:json][timeout:180];(way["highway"](${bbox});way["building"](${bbox}););out geom;`;
+  const endpoints = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter'
+  ];
+  let lastError;
+  for (const endpoint of endpoints) {
+    try {
+      const url = endpoint + '?data=' + encodeURIComponent(query);
+      const response = await fetch(url, { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error('Map server returned HTTP ' + response.status);
+      const osm = await response.json();
+      const features = [];
+      for (const way of osm.elements || []) {
+        if (way.type !== 'way' || !way.geometry || !way.tags) continue;
+        const coords = way.geometry.map(point => [point.lon, point.lat]);
+        if (way.tags.highway && coords.length >= 2) {
+          features.push({ type: 'Feature', properties: way.tags,
+            geometry: { type: 'LineString', coordinates: coords } });
+        } else if (way.tags.building && coords.length >= 4 &&
+                   coords[0][0] === coords.at(-1)[0] && coords[0][1] === coords.at(-1)[1]) {
+          features.push({ type: 'Feature', properties: way.tags,
+            geometry: { type: 'Polygon', coordinates: [coords] } });
+        }
+      }
+      if (!features.length) throw new Error('The map service returned no Sydney features');
+      return { type: 'FeatureCollection', features };
+    } catch (error) { lastError = error; }
+  }
+  throw new Error('Could not load Sydney map automatically: ' + (lastError?.message || 'map services unavailable'));
+}
+
 export async function loadSydneyMap(scene, materials) {
-  const response = await fetch('./data/sydney-cbd.geojson');
-  if (!response.ok) throw new Error('Sydney map data missing. Run: python tools/fetch_sydney_osm.py');
-  const data = await response.json();
+  const data = await fetchSydneyFeatures();
   const palette = [0xaaa69b, 0xc1b8a8, 0x7f898d, 0x9daeb0, 0x8b9699, 0xd0c8b8];
   let roads = 0, buildings = 0;
   for (const feature of data.features || []) {
