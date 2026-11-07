@@ -60,42 +60,54 @@ function addBuilding(scene, ring, tags, palette) {
   scene.add(building);
 }
 
-async function fetchSydneyFeatures() {
-  const bbox = '-33.90,151.18,-33.858,151.225';
-  const query = `[out:json][timeout:180];(way["highway"](${bbox});way["building"](${bbox}););out geom;`;
-  const endpoints = [
-    'https://overpass-api.de/api/interpreter',
-    'https://overpass.kumi.systems/api/interpreter'
-  ];
-  let lastError;
-  for (const endpoint of endpoints) {
-    try {
-      const url = endpoint + '?data=' + encodeURIComponent(query);
-      const response = await fetch(url, { headers: { Accept: 'application/json' } });
-      if (!response.ok) throw new Error('Map server returned HTTP ' + response.status);
-      const osm = await response.json();
-      const features = [];
-      for (const way of osm.elements || []) {
-        if (way.type !== 'way' || !way.geometry || !way.tags) continue;
-        const coords = way.geometry.map(point => [point.lon, point.lat]);
-        if (way.tags.highway && coords.length >= 2) {
-          features.push({ type: 'Feature', properties: way.tags,
-            geometry: { type: 'LineString', coordinates: coords } });
-        } else if (way.tags.building && coords.length >= 4 &&
-                   coords[0][0] === coords.at(-1)[0] && coords[0][1] === coords.at(-1)[1]) {
-          features.push({ type: 'Feature', properties: way.tags,
-            geometry: { type: 'Polygon', coordinates: [coords] } });
-        }
-      }
-      if (!features.length) throw new Error('The map service returned no Sydney features');
-      return { type: 'FeatureCollection', features };
-    } catch (error) { lastError = error; }
+// Bundled starter map: fixed Sydney CBD street corridors and building blocks.
+// Coordinates are WGS84; no map service or network request is needed at runtime.
+const SYDNEY_ROADS = [
+  ["George Street", [[151.2061,-33.8730],[151.2064,-33.8690],[151.2067,-33.8650],[151.2070,-33.8610],[151.2073,-33.8585]], "primary"],
+  ["Pitt Street", [[151.2090,-33.8730],[151.2093,-33.8690],[151.2096,-33.8650],[151.2099,-33.8610],[151.2102,-33.8585]], "primary"],
+  ["Castlereagh Street", [[151.2080,-33.8730],[151.2083,-33.8690],[151.2086,-33.8650],[151.2089,-33.8610],[151.2092,-33.8585]], "secondary"],
+  ["Elizabeth Street", [[151.2100,-33.8730],[151.2103,-33.8690],[151.2106,-33.8650],[151.2109,-33.8610],[151.2112,-33.8585]], "secondary"],
+  ["Macquarie Street", [[151.2125,-33.8730],[151.2128,-33.8690],[151.2131,-33.8650],[151.2134,-33.8610],[151.2137,-33.8585]], "secondary"],
+  ["York Street", [[151.2040,-33.8700],[151.2043,-33.8660],[151.2046,-33.8620]], "secondary"],
+  ["Clarence Street", [[151.2030,-33.8700],[151.2033,-33.8660],[151.2036,-33.8620]], "secondary"],
+  ["Kent Street", [[151.2020,-33.8700],[151.2023,-33.8660],[151.2026,-33.8620]], "secondary"],
+  ["Bridge Street", [[151.2020,-33.8620],[151.2050,-33.8620],[151.2080,-33.8620],[151.2110,-33.8620],[151.2140,-33.8620]], "secondary"],
+  ["Hunter Street", [[151.2020,-33.8660],[151.2050,-33.8660],[151.2080,-33.8660],[151.2110,-33.8660],[151.2140,-33.8660]], "secondary"],
+  ["King Street", [[151.2020,-33.8680],[151.2050,-33.8680],[151.2080,-33.8680],[151.2110,-33.8680],[151.2140,-33.8680]], "secondary"],
+  ["Market Street", [[151.2020,-33.8700],[151.2050,-33.8700],[151.2080,-33.8700],[151.2110,-33.8700],[151.2140,-33.8700]], "secondary"],
+  ["Park Street", [[151.2020,-33.8720],[151.2050,-33.8720],[151.2080,-33.8720],[151.2110,-33.8720],[151.2140,-33.8720]], "secondary"],
+  ["Liverpool Street", [[151.2020,-33.8740],[151.2050,-33.8740],[151.2080,-33.8740],[151.2110,-33.8740],[151.2140,-33.8740]], "secondary"],
+  ["Bathurst Street", [[151.2020,-33.8760],[151.2050,-33.8760],[151.2080,-33.8760],[151.2110,-33.8760],[151.2140,-33.8760]], "secondary"],
+  ["Goulburn Street", [[151.2020,-33.8780],[151.2050,-33.8780],[151.2080,-33.8780],[151.2110,-33.8780],[151.2140,-33.8780]], "secondary"],
+  ["Campbell Street", [[151.2020,-33.8800],[151.2050,-33.8800],[151.2080,-33.8800],[151.2110,-33.8800],[151.2140,-33.8800]], "secondary"]
+];
+
+function bundledSydneyFeatures() {
+  const features = SYDNEY_ROADS.map(([name, coordinates, highway]) => ({
+    type: "Feature", properties: { name, highway },
+    geometry: { type: "LineString", coordinates }
+  }));
+  // Fixed CBD block footprints between the bundled street corridors.
+  const xs = [151.2028,151.2040,151.2055,151.2072,151.2084,151.2100,151.2116,151.2130];
+  const ys = [-33.8600,-33.8630,-33.8670,-33.8690,-33.8710,-33.8730,-33.8750,-33.8770,-33.8790];
+  let index = 0;
+  for (let row = 0; row < ys.length - 1; row++) {
+    for (let col = 0; col < xs.length - 1; col++) {
+      const west = xs[col], east = xs[col + 1], north = ys[row], south = ys[row + 1];
+      const insetX = 0.00012, insetY = 0.00012;
+      const ring = [[west+insetX,north-insetY],[east-insetX,north-insetY],
+        [east-insetX,south+insetY],[west+insetX,south+insetY],[west+insetX,north-insetY]];
+      const levels = 4 + ((row * 7 + col * 3) % 28);
+      features.push({ type: "Feature", properties: { building: "yes", "building:levels": String(levels) },
+        geometry: { type: "Polygon", coordinates: [ring] } });
+      index++;
+    }
   }
-  throw new Error('Could not load Sydney map automatically: ' + (lastError?.message || 'map services unavailable'));
+  return { type: "FeatureCollection", features };
 }
 
 export async function loadSydneyMap(scene, materials) {
-  const data = await fetchSydneyFeatures();
+  const data = bundledSydneyFeatures();
   const palette = [0xaaa69b, 0xc1b8a8, 0x7f898d, 0x9daeb0, 0x8b9699, 0xd0c8b8];
   let roads = 0, buildings = 0;
   for (const feature of data.features || []) {
@@ -110,5 +122,5 @@ export async function loadSydneyMap(scene, materials) {
       buildings++;
     }
   }
-  return { roads, buildings, attribution: '© OpenStreetMap contributors' };
+  return { roads, buildings, attribution: 'Bundled Sydney CBD starter layout' };
 }
