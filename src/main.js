@@ -31,8 +31,8 @@ const mat = (color, roughness=0.85, map=null) => new THREE.MeshStandardMaterial(
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000,9000), mat(0xffffff,0.95,textures.grass));
 ground.rotation.x = -Math.PI/2; ground.position.y = -0.12; ground.receiveShadow = true; scene.add(ground);
 
-const water = new THREE.Mesh(new THREE.PlaneGeometry(900,170), new THREE.MeshStandardMaterial({color:0x367f9b, roughness:0.28, metalness:0.12}));
-water.rotation.x=-Math.PI/2; water.position.set(0,-0.08,-300); scene.add(water);
+const water = new THREE.Mesh(new THREE.PlaneGeometry(6000,1500), new THREE.MeshStandardMaterial({color:0x367f9b, roughness:0.28, metalness:0.12}));
+water.rotation.x=-Math.PI/2; water.position.set(0,-0.08,-850); scene.add(water);
 
 const roadMat=mat(0xffffff,0.96,textures.asphalt), lineMat=mat(0xe5d9a5), pavementMat=mat(0xffffff,0.92,textures.concrete);
 function box(w,h,d,material,x,y,z,shadow=true){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=shadow;m.receiveShadow=true;scene.add(m);return m;}
