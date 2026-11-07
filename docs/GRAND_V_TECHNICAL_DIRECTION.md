@@ -41,13 +41,7 @@ The controller helper maps a standard gamepad to the engine's shared keyboard/mo
 
 The previous prototype generated random city blocks. The new map loader reads real WGS84 road centre-lines and building footprints from OpenStreetMap and projects them to metres around Circular Quay. Building heights use OSM `height` / `building:levels` tags when present, with a fallback estimate.
 
-Generate the starter CBD dataset:
-
-```bash
-python tools/fetch_sydney_osm.py
-```
-
-Then serve the repository over HTTP (not `file://`). The starter extract covers The Rocks, Sydney CBD, Barangaroo, Darling Harbour, Haymarket and the edge of Surry Hills. It is a geographically accurate starter district, **not yet all of Greater Sydney**. Expand the import in regional tiles rather than requesting the entire metro area in one Overpass query.
+The game requests the starter CBD extract automatically from the public Overpass API when it opens. No Python or manual map generation is needed. A network connection is required; the loader tries a second Overpass endpoint if the first is unavailable. The starter extract covers The Rocks, Sydney CBD, Barangaroo, Darling Harbour, Haymarket and the edge of Surry Hills. It is a geographically accurate starter district, **not yet all of Greater Sydney**. Expand the import in regional tiles rather than requesting the entire metro area in one Overpass query.
 
 OpenStreetMap attribution: © OpenStreetMap contributors. Data is available under the Open Database License (ODbL). Preserve attribution and review ODbL obligations when publishing a derived database.
 
