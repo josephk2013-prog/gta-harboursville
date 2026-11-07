@@ -18,10 +18,15 @@ function addRoad(scene, coords, width, material) {
     const a = project(coords[i - 1]), b = project(coords[i]);
     const dx = b.x - a.x, dz = b.z - a.z, length = Math.hypot(dx, dz);
     if (length < 0.5) continue;
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(length, width), material);
-    mesh.rotation.x = -Math.PI / 2;
-    mesh.rotation.z = -Math.atan2(dz, dx);
-    mesh.position.set((a.x + b.x) / 2, 0.035, (a.z + b.z) / 2);
+    const px = -dz / length * width / 2, pz = dx / length * width / 2;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute([
+      a.x + px, 0.035, a.z + pz, a.x - px, 0.035, a.z - pz,
+      b.x - px, 0.035, b.z - pz, b.x + px, 0.035, b.z + pz
+    ], 3));
+    geometry.setIndex([0, 1, 2, 0, 2, 3]);
+    geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow = true;
     scene.add(mesh);
   }
