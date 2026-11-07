@@ -24,7 +24,7 @@ function addRoad(scene, coords, width, material) {
       a.x + px, 0.035, a.z + pz, a.x - px, 0.035, a.z - pz,
       b.x - px, 0.035, b.z - pz, b.x + px, 0.035, b.z + pz
     ], 3));
-    geometry.setIndex([0, 1, 2, 0, 2, 3]);
+    geometry.setIndex([0, 2, 1, 0, 3, 2]);
     geometry.computeVertexNormals();
     const mesh = new THREE.Mesh(geometry, material);
     mesh.receiveShadow = true;
